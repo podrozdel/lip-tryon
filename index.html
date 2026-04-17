@@ -54,25 +54,26 @@
         align-items: start;
       }
 
-      /* Row 1: header spans both columns */
-      .header        { grid-column: 1 / -1; grid-row: 1; text-align: left; padding: 0; display: flex; align-items: baseline; gap: 20px; }
+      /* Row 1: header centered across both columns */
+      .header        { grid-column: 1 / -1; grid-row: 1; text-align: center; padding: 0; justify-content: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
       .header h1     { font-size: 34px; }
-      .header-logo   { font-size: 11px; margin-bottom: 0; flex-shrink: 0; }
+      .header-logo   { font-size: 11px; margin-bottom: 0; }
 
-      /* Row 2: tabs left, controls top right */
+      /* Row 2: tabs left */
       .tabs           { grid-column: 1; grid-row: 2; }
-      .glass.controls { grid-column: 2; grid-row: 2 / 5; }
 
-      /* Row 3: viewport left */
+      /* Row 3: viewport left, controls right (spans rows 2-3) */
       #section-camera,
       #section-photo  { grid-column: 1; grid-row: 3; }
+      .glass.controls { grid-column: 2; grid-row: 2 / 4; }
 
       /* Row 4: errors left */
       .error-banner,
       .info-banner    { grid-column: 1; grid-row: 4; }
 
-      /* Row 5: CTA full width bottom right, flush under controls */
-      .cta-btn        { grid-column: 2; grid-row: 5; }
+      /* CTA: hidden at grid level, shown inside controls on desktop */
+      .cta-btn        { display: none; }
+      .cta-btn-inner  { display: flex; }
 
       .viewport, .photo-area { aspect-ratio: 4/5; }
     }
@@ -374,6 +375,7 @@
       transition: opacity .15s, transform .15s;
     }
     .cta-btn:active { transform: scale(0.98); opacity: .88; }
+    .cta-btn-inner  { display: none; }
     .cta-arrow { font-size: 18px; }
 
     .hidden { display: none !important; }
@@ -490,9 +492,14 @@
       </div>
       <input type="range" id="gloss-slider" min="0" max="100" step="5" value="30" />
     </div>
+
+    <!-- CTA inside controls (desktop) -->
+    <a class="cta-btn cta-btn-inner" href="https://b918851.yclients.com/company/167253/record-type?" target="_blank" rel="noopener">
+      Записаться на макияж <span style="font-size:18px">→</span>
+    </a>
   </div>
 
-  <!-- CTA -->
+  <!-- CTA outside controls (mobile) -->
   <a class="cta-btn" href="https://b918851.yclients.com/company/167253/record-type?" target="_blank" rel="noopener">
     Записаться на макияж
     <span class="cta-arrow">→</span>
