@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Примерка цвета губ — Makeup Kitchen</title>
-  <!-- cache bust: v4 -->
+  <!-- cache bust: v7 -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -41,42 +41,6 @@
       gap: 14px;
     }
 
-    /* Desktop: two-column layout */
-    @media (min-width: 768px) {
-      body { padding: 40px 32px 48px; align-items: flex-start; }
-
-      .app {
-        max-width: 960px;
-        display: grid;
-        grid-template-columns: 1fr 380px;
-        grid-template-rows: auto auto 1fr auto auto;
-        gap: 16px 24px;
-        align-items: start;
-      }
-
-      /* Row 1: header centered across both columns */
-      .header        { grid-column: 1 / -1; grid-row: 1; text-align: center; padding: 0; justify-content: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-      .header h1     { font-size: 34px; }
-      .header-logo   { font-size: 11px; margin-bottom: 0; }
-
-      /* Row 2: tabs left */
-      .tabs           { grid-column: 1; grid-row: 2; }
-
-      /* Row 3: viewport left, controls right (spans rows 2-3) */
-      #section-camera,
-      #section-photo  { grid-column: 1; grid-row: 3; }
-      .glass.controls { grid-column: 2; grid-row: 2 / 4; }
-
-      /* Row 4: errors left */
-      .error-banner,
-      .info-banner    { grid-column: 1; grid-row: 4; }
-
-      /* CTA: hidden at grid level, shown inside controls on desktop */
-      .cta-btn        { display: none; }
-      .cta-btn-inner  { display: flex; }
-
-      .viewport, .photo-area { aspect-ratio: 4/5; }
-    }
 
     /* Header */
     .header {
@@ -424,6 +388,39 @@
       white-space: nowrap;
       z-index: 5;
       pointer-events: none;
+    }
+
+    /* Desktop: two-column layout — must be LAST to override global styles */
+    @media (min-width: 768px) {
+      body { padding: 40px 32px 48px; align-items: flex-start; }
+
+      .app {
+        max-width: 960px;
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        grid-template-rows: auto auto 1fr auto auto;
+        gap: 16px 24px;
+        align-items: start;
+      }
+
+      .header        { grid-column: 1 / -1; grid-row: 1; text-align: center; padding: 0; justify-content: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+      .header h1     { font-size: 34px; }
+      .header-logo   { font-size: 11px; margin-bottom: 0; }
+
+      .tabs           { grid-column: 1; grid-row: 2; }
+
+      #section-camera,
+      #section-photo  { grid-column: 1; grid-row: 3; }
+      .glass.controls { grid-column: 2; grid-row: 2 / 4; }
+
+      .error-banner,
+      .info-banner    { grid-column: 1; grid-row: 4; }
+
+      /* CTA: mobile button hidden, inner (desktop) button shown */
+      .cta-btn        { display: none; }
+      .cta-btn-inner  { display: flex !important; }
+
+      .viewport, .photo-area { aspect-ratio: 4/5; }
     }
   </style>
 </head>
@@ -1060,13 +1057,22 @@ async function takeSelfie() {
   ctx.fillText(text, bx + pad * 0.7, by + bh / 2);
   ctx.restore();
 
-  // Convert to blob and share (toDataURL for Safari compatibility)
+  // Convert canvas to blob via atob (works in all browsers including Safari)
+  function dataUrlToBlob(dataUrl) {
+    const parts = dataUrl.split(',');
+    const mime  = parts[0].match(/:(.*?);/)[1];
+    const raw   = atob(parts[1]);
+    const arr   = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+
   try {
     const dataUrl = out.toDataURL('image/jpeg', 0.93);
-    const res = await fetch(dataUrl);
-    const blob = await res.blob();
+    const blob = dataUrlToBlob(dataUrl);
     const file = new File([blob], 'makeup-kitchen-selfie.jpg', { type: 'image/jpeg' });
 
+    let shared = false;
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
@@ -1074,12 +1080,12 @@ async function takeSelfie() {
           title: 'Мой цвет губ — Makeup Kitchen',
           text: 'Примерила цвет губ в Makeup Kitchen 💄',
         });
+        shared = true;
       } catch (e) {
-        if (e.name !== 'AbortError') downloadImage(out);
+        if (e.name === 'AbortError') shared = true; // user cancelled — not an error
       }
-    } else {
-      downloadImage(out);
     }
+    if (!shared) downloadImage(out);
   } catch (e) {
     downloadImage(out);
   }
