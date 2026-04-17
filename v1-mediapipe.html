@@ -888,37 +888,59 @@ function loadImage(file) {
 }
 
 // ─── Draw lip color ───
-function drawLipColor(ctx, landmarks, w, h) {
-  ctx.save();
+// Offscreen canvas for soft-edge lip mask
+const offscreen = document.createElement('canvas');
+const offCtx = offscreen.getContext('2d');
 
+function buildLipPath(landmarks, w, h) {
   const path = new Path2D();
-
-  // Outer contour
   OUTER.forEach((idx, i) => {
     const pt = landmarks[idx];
-    const x = pt.x * w, y = pt.y * h;
-    i === 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+    i === 0 ? path.moveTo(pt.x*w, pt.y*h) : path.lineTo(pt.x*w, pt.y*h);
   });
   path.closePath();
-
-  // Inner contour (mouth opening — subtracted via evenodd)
   INNER.forEach((idx, i) => {
     const pt = landmarks[idx];
-    const x = pt.x * w, y = pt.y * h;
-    i === 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+    i === 0 ? path.moveTo(pt.x*w, pt.y*h) : path.lineTo(pt.x*w, pt.y*h);
   });
   path.closePath();
+  return path;
+}
 
-  ctx.clip(path, 'evenodd');
+function drawLipColor(ctx, landmarks, w, h) {
+  // Step 1: draw color mask on offscreen canvas with soft edges
+  offscreen.width = w; offscreen.height = h;
+  offCtx.clearRect(0, 0, w, h);
 
-  // Color layer — multiply preserves lip texture
-  ctx.globalCompositeOperation = 'multiply';
+  // Fill lip shape
+  offCtx.save();
+  offCtx.clip(buildLipPath(landmarks, w, h), 'evenodd');
+  offCtx.fillStyle = state.color;
+  offCtx.fillRect(0, 0, w, h);
+  offCtx.restore();
+
+  // Soften edges with blur (natural makeup look, no hard border)
+  offCtx.filter = 'blur(2px)';
+  const temp = document.createElement('canvas');
+  temp.width = w; temp.height = h;
+  const tCtx = temp.getContext('2d');
+  tCtx.drawImage(offscreen, 0, 0);
+  offCtx.filter = 'none';
+  offCtx.clearRect(0, 0, w, h);
+  offCtx.drawImage(temp, 0, 0);
+
+  // Step 2: composite onto main canvas
+  // "color" mode: takes hue+saturation from source, keeps luminosity of destination
+  // = changes lip color while preserving skin texture, shadows, highlights
+  ctx.save();
+  ctx.globalCompositeOperation = 'color';
   ctx.globalAlpha = state.opacity;
-  ctx.fillStyle = state.color;
-  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(offscreen, 0, 0);
 
-  // Gloss highlight — radial gradient at cupid's bow
+  // Step 3: gloss — soft radial highlight on upper lip
   if (state.gloss > 0.02) {
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = state.gloss * 0.7;
     const cx = landmarks[13].x * w;
     const cy = (landmarks[13].y * h) - 3;
     const r  = Math.max(w, h) * 0.04;
