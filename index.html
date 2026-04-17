@@ -42,7 +42,8 @@
 
     /* Desktop: two-column layout */
     @media (min-width: 768px) {
-      body { padding: 40px 32px 48px; align-items: center; }
+      html, body { height: 100%; }
+      body { padding: 40px 32px 48px; align-items: center; min-height: 100vh; }
 
       .app {
         max-width: 960px;
