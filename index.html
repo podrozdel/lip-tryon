@@ -10,12 +10,12 @@
     Измени ACTIVE_VERSION на нужную:
       'v1'  — MediaPipe (текущий, лучшее качество)
       'v2'  — TF.js FaceMesh (быстрее грузится)
-      'v3'  — WebGL (в разработке)
+      'v2'  — WebGL (в разработке)
   ══════════════════════════════════════════
   -->
   <script>
-    const ACTIVE_VERSION = 'v3';
-    const MAP = { v1: 'v1-mediapipe.html', v2: 'v2-jeeliz.html', v3: 'v3-webgl.html' };
+    const ACTIVE_VERSION = 'v2';
+    const MAP = { v1: 'v1-mediapipe.html', v2: 'v2-jeeliz.html', v3: 'v2-webgl.html' };
     location.replace(MAP[ACTIVE_VERSION] || MAP.v1);
   </script>
 </head>
