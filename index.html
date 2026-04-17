@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Примерка цвета губ — Makeup Kitchen</title>
-  <!-- cache bust: v16 -->
+  <!-- cache bust: v17 -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -570,20 +570,14 @@ const state = {
 const video         = document.getElementById('video');
 const camCanvas     = document.getElementById('camera-canvas');
 const camCtx        = camCanvas.getContext('2d');
-const photoCanvas   = document.getElementById('photo-canvas');
-const photoCtx      = photoCanvas.getContext('2d');
 const opacitySlider = document.getElementById('opacity-slider');
 const glossSlider   = document.getElementById('gloss-slider');
 const opacityVal    = document.getElementById('opacity-val');
 const glossVal      = document.getElementById('gloss-val');
-const fileInput     = document.getElementById('file-input');
 const errorBanner   = document.getElementById('error-banner');
 const infoBanner    = document.getElementById('info-banner');
 const camLoading    = document.getElementById('camera-loading');
-const photoLoading  = document.getElementById('photo-loading');
 const detectHint    = document.getElementById('detect-hint');
-const photoArea     = document.getElementById('photo-area');
-const photoPlaceholder = document.getElementById('photo-placeholder');
 
 // ─── HSL color picker ───
 const slCanvas   = document.getElementById('sl-canvas');
@@ -673,7 +667,6 @@ function updatePickerFromHSL() {
   presetsRow.querySelectorAll('.preset-dot').forEach(d => d.classList.remove('active'));
   drawSLSquare();
   drawHueStrip();
-  if (state.mode === 'photo') redrawPhoto();
 }
 
 function resizePickerCanvases() {
@@ -735,13 +728,11 @@ window.addEventListener('resize', resizePickerCanvases);
 opacitySlider.addEventListener('input', () => {
   state.opacity = opacitySlider.value / 100;
   opacityVal.textContent = opacitySlider.value + '%';
-  if (state.mode === 'photo') redrawPhoto();
 });
 
 glossSlider.addEventListener('input', () => {
   state.gloss = glossSlider.value / 100;
   glossVal.textContent = glossSlider.value + '%';
-  if (state.mode === 'photo') redrawPhoto();
 });
 
 // ─── MediaPipe init ───
@@ -838,90 +829,6 @@ function cameraLoop(ts) {
   }
 }
 
-// ─── Photo mode ───
-let photoImage = null;
-
-fileInput.addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  photoLoading.classList.remove('hidden');
-  photoPlaceholder.style.display = 'none';
-  photoCanvas.classList.add('hidden');
-
-  photoImage = await loadImage(file);
-
-  // Switch landmarker to IMAGE mode
-  if (!faceLandmarker) {
-    const ok = await initMediaPipeImage();
-    if (!ok) { photoLoading.classList.add('hidden'); return; }
-  } else {
-    try {
-      await faceLandmarker.setOptions({ runningMode: 'IMAGE' });
-    } catch {}
-  }
-
-  // Size canvas to image
-  const maxW = photoArea.clientWidth;
-  const scale = Math.min(maxW / photoImage.width, 1);
-  photoCanvas.width  = photoImage.width  * scale;
-  photoCanvas.height = photoImage.height * scale;
-
-  try {
-    const result = faceLandmarker.detect(photoImage);
-    if (result.faceLandmarks && result.faceLandmarks.length > 0) {
-      state.lastPhotoLandmarks = result.faceLandmarks[0];
-      redrawPhoto();
-      photoCanvas.classList.remove('hidden');
-    } else {
-      showError('Лицо не обнаружено. Попробуй другое фото с хорошим освещением.');
-      photoPlaceholder.style.display = 'flex';
-    }
-  } catch (e) {
-    showError('Ошибка при обработке фото: ' + e.message);
-    photoPlaceholder.style.display = 'flex';
-  }
-
-  photoLoading.classList.add('hidden');
-
-  // Switch back to VIDEO mode for camera
-  try { await faceLandmarker.setOptions({ runningMode: 'VIDEO' }); } catch {}
-});
-
-function redrawPhoto() {
-  if (!photoImage || !state.lastPhotoLandmarks) return;
-  photoCtx.clearRect(0, 0, photoCanvas.width, photoCanvas.height);
-  photoCtx.drawImage(photoImage, 0, 0, photoCanvas.width, photoCanvas.height);
-  drawLipColor(photoCtx, state.lastPhotoLandmarks, photoCanvas.width, photoCanvas.height);
-}
-
-async function initMediaPipeImage() {
-  try {
-    const vision = await FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
-    );
-    faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-        delegate: 'GPU',
-      },
-      runningMode: 'IMAGE',
-      numFaces: 1,
-    });
-    return true;
-  } catch {
-    showError('Не удалось загрузить модель. Проверьте подключение.');
-    return false;
-  }
-}
-
-function loadImage(file) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.src = URL.createObjectURL(file);
-  });
-}
 
 // ─── Draw lip color ───
 // Offscreen canvas for soft-edge lip mask
