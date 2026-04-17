@@ -1060,8 +1060,11 @@ async function takeSelfie() {
   ctx.fillText(text, bx + pad * 0.7, by + bh / 2);
   ctx.restore();
 
-  // Convert to blob and share
-  out.toBlob(async (blob) => {
+  // Convert to blob and share (toDataURL for Safari compatibility)
+  try {
+    const dataUrl = out.toDataURL('image/jpeg', 0.93);
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
     const file = new File([blob], 'makeup-kitchen-selfie.jpg', { type: 'image/jpeg' });
 
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1075,11 +1078,12 @@ async function takeSelfie() {
         if (e.name !== 'AbortError') downloadImage(out);
       }
     } else {
-      // Desktop fallback: download
       downloadImage(out);
     }
-    btn.disabled = false;
-  }, 'image/jpeg', 0.93);
+  } catch (e) {
+    downloadImage(out);
+  }
+  btn.disabled = false;
 }
 
 function downloadImage(canvas) {
