@@ -28,6 +28,7 @@
       color: var(--text);
       display: flex;
       justify-content: center;
+      align-items: flex-start;
       padding: 24px 16px 40px;
     }
 
@@ -37,6 +38,45 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
+    }
+
+    /* Desktop: two-column layout */
+    @media (min-width: 768px) {
+      body { padding: 40px 32px 48px; align-items: center; }
+
+      .app {
+        max-width: 960px;
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        grid-template-rows: auto auto 1fr auto;
+        gap: 20px;
+        align-items: start;
+      }
+
+      /* Header spans both columns */
+      .header        { grid-column: 1 / -1; text-align: left; padding: 0; display: flex; align-items: baseline; gap: 20px; }
+      .header h1     { font-size: 36px; }
+      .header-logo   { font-size: 12px; margin-bottom: 0; flex-shrink: 0; }
+
+      /* Tabs: only in left column above viewport */
+      .tabs          { grid-column: 1; grid-row: 2; }
+
+      /* Viewport: left column, row 3 */
+      #section-camera,
+      #section-photo { grid-column: 1; grid-row: 3; }
+
+      /* Errors below viewport */
+      .error-banner,
+      .info-banner   { grid-column: 1; grid-row: 4; }
+
+      /* Controls: right column, rows 2-4 */
+      .glass.controls { grid-column: 2; grid-row: 2 / 5; }
+
+      /* CTA: bottom right */
+      .cta-btn       { grid-column: 2; grid-row: 5; }
+
+      /* Bigger viewport on desktop */
+      .viewport, .photo-area { aspect-ratio: 4/5; }
     }
 
     /* Header */
