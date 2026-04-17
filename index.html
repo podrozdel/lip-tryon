@@ -381,6 +381,35 @@
     .hidden { display: none !important; }
 
     /* Detect hint */
+    /* Selfie button */
+    .selfie-btn {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      z-index: 6;
+      background: rgba(255,255,255,0.92);
+      border: none;
+      border-radius: 50px;
+      padding: 9px 18px;
+      font-family: 'Manrope', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--brand);
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(60,14,44,.2);
+      transition: transform .15s, opacity .15s;
+    }
+    .selfie-btn:active { transform: scale(0.95); }
+    .selfie-btn:disabled { opacity: .5; cursor: default; }
+
+    /* Flash effect */
+    @keyframes flash { 0%,100%{opacity:0} 50%{opacity:1} }
+    .flash-overlay {
+      position: fixed; inset: 0; background: #fff;
+      pointer-events: none; z-index: 999;
+      animation: flash .35s ease forwards;
+    }
+
     .detect-hint {
       position: absolute;
       bottom: 12px;
@@ -423,6 +452,8 @@
         <p>Загружаем модель...</p>
       </div>
       <div class="detect-hint" id="detect-hint">Направь камеру на лицо</div>
+      <!-- Selfie button -->
+      <button class="selfie-btn" id="selfie-btn" onclick="takeSelfie()">📸 Селфи</button>
     </div>
   </div>
 
@@ -982,6 +1013,80 @@ function showError(msg) {
 }
 function clearError() {
   errorBanner.classList.remove('show');
+}
+
+// ─── Selfie ──────────────────────────────────────────────────
+async function takeSelfie() {
+  const btn = document.getElementById('selfie-btn');
+  btn.disabled = true;
+
+  // Flash effect
+  const flash = document.createElement('div');
+  flash.className = 'flash-overlay';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 400);
+
+  // Grab current canvas (camera mode)
+  const src = document.getElementById('camera-canvas');
+  if (!src || !src.width) { btn.disabled = false; return; }
+
+  // Compose final image: canvas + MK watermark
+  const out = document.createElement('canvas');
+  out.width  = src.width;
+  out.height = src.height;
+  const ctx  = out.getContext('2d');
+
+  // Draw current camera frame with lip color
+  ctx.drawImage(src, 0, 0);
+
+  // Watermark: top-right corner
+  const pad  = Math.round(out.width * 0.04);
+  const size = Math.round(out.width * 0.05);
+
+  ctx.save();
+  // Semi-transparent pill background
+  const text = 'MAKEUP KITCHEN';
+  ctx.font = `600 ${size}px Montserrat, sans-serif`;
+  const tw = ctx.measureText(text).width;
+  const bw = tw + pad * 1.4, bh = size * 1.6;
+  const bx = out.width - bw - pad, by = pad;
+  ctx.fillStyle = 'rgba(60,14,44,0.55)';
+  ctx.beginPath();
+  ctx.roundRect(bx, by, bw, bh, bh / 2);
+  ctx.fill();
+  // Text
+  ctx.fillStyle = '#ffb9e7';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, bx + pad * 0.7, by + bh / 2);
+  ctx.restore();
+
+  // Convert to blob and share
+  out.toBlob(async (blob) => {
+    const file = new File([blob], 'makeup-kitchen-selfie.jpg', { type: 'image/jpeg' });
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Мой цвет губ — Makeup Kitchen',
+          text: 'Примерила цвет губ в Makeup Kitchen 💄',
+        });
+      } catch (e) {
+        if (e.name !== 'AbortError') downloadImage(out);
+      }
+    } else {
+      // Desktop fallback: download
+      downloadImage(out);
+    }
+    btn.disabled = false;
+  }, 'image/jpeg', 0.93);
+}
+
+function downloadImage(canvas) {
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/jpeg', 0.93);
+  a.download = 'makeup-kitchen-selfie.jpg';
+  a.click();
 }
 
 // ─── Init ───
