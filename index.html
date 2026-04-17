@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Примерка цвета губ — Makeup Kitchen</title>
-  <!-- cache bust: v13 -->
+  <!-- cache bust: v14 -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -1040,32 +1040,18 @@ window.takeSelfie = async function takeSelfie() {
   const pad  = Math.round(out.width * 0.04);
   const size = Math.round(out.width * 0.05);
 
-  // Draw SVG logo watermark top-right
+  // Draw watermark.svg top-right (квадратный 126x126 viewBox)
   await new Promise((resolve) => {
-    const logoW = Math.round(out.width * 0.28);
-    const logoH = Math.round(logoW * (221 / 397));
-    const logoX = out.width - logoW - pad;
+    const logoSize = Math.round(out.width * 0.18); // ~18% ширины кадра
+    const logoX = out.width - logoSize - pad;
     const logoY = pad;
-
-    const svgStr = `<svg width="${logoW}" height="${logoH}" viewBox="0 0 397 221" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M95.8506 106.172L100.825 106.181L80.4987 61.4512L75.8436 61.4428L55.3569 106.099L60.2672 106.108L65.6453 94.1779L90.5154 94.2228L95.8506 106.172ZM67.374 90.3502L78.1304 66.3631L88.8005 90.3889L67.374 90.3502Z" fill="white" fill-opacity="0.9"/><path d="M141.879 106.255L147.491 106.265L126.874 81.7743L146.232 61.5697L140.812 61.5599L114.554 88.5199L114.602 61.5126L109.884 61.5041L109.803 106.197L114.522 106.205L114.543 94.4576L123.679 85.2163L141.879 106.255Z" fill="white" fill-opacity="0.9"/><path d="M161.46 102.204L161.49 85.6037L184.574 85.6453L184.582 81.6229L161.497 81.5813L161.526 65.6834H185.796L187.423 61.6439L156.814 61.5887L156.734 106.282L186.59 106.338L188.307 102.252L161.46 102.204Z" fill="white" fill-opacity="0.9"/><path d="M218.968 106.777C230.383 106.797 237.282 100.17 237.305 87.3365L237.351 61.7339L232.76 61.7256L232.714 87.1367C232.695 97.7353 227.712 102.579 218.976 102.563C210.303 102.547 205.338 97.686 205.357 87.0874L205.403 61.6763L200.684 61.6678L200.638 87.2704C200.615 100.104 207.554 106.756 218.968 106.777Z" fill="white" fill-opacity="0.9"/><path d="M269.873 61.7925L253.166 61.7624L253.085 106.455L257.804 106.464L257.83 92.3536L269.818 92.3752C281.169 92.3956 288.067 86.6618 288.084 77.1487C288.101 67.5716 281.224 61.813 269.873 61.7925ZM269.698 88.2249L257.837 88.2035L257.877 65.8571L269.738 65.8785C278.666 65.8946 283.378 69.9893 283.365 77.1402C283.352 84.1633 278.626 88.241 269.698 88.2249Z" fill="white" fill-opacity="0.9"/><path d="M89.9318 159.719L94.6507 159.727L94.7311 115.035L90.0121 115.026L89.9318 159.719Z" fill="white" fill-opacity="0.9"/><path d="M120.717 159.774L125.436 159.783L125.509 119.176L141.196 119.205L142.49 115.118L106.396 115.053L105.103 119.14L120.79 119.168L120.717 159.774Z" fill="white" fill-opacity="0.9"/><path d="M170.294 160.247C176.862 160.259 182.733 158.035 186.695 153.7L183.703 150.694C180.061 154.454 175.595 156.043 170.493 156.033C159.716 156.014 151.631 148.082 151.651 137.484C151.67 126.885 159.783 118.983 170.56 119.002C175.661 119.011 180.122 120.616 183.75 124.325L186.753 121.33C182.807 116.981 176.944 114.8 170.44 114.788C156.984 114.764 147.019 124.387 146.995 137.475C146.972 150.564 156.903 160.223 170.294 160.247Z" fill="white" fill-opacity="0.9"/><path d="M232.343 115.283L232.307 135.203L204.376 135.153L204.412 115.232L199.693 115.224L199.613 159.917L204.332 159.925L204.369 139.303L232.3 139.353L232.263 159.976L236.918 159.984L236.998 115.291L232.343 115.283Z" fill="white" fill-opacity="0.9"/><path d="M259.084 155.938L259.114 139.337L282.198 139.379L282.205 135.357L259.121 135.315L259.15 119.417L283.365 119.464L285.047 115.378L254.438 115.323L254.358 160.015L284.252 160.097L285.931 155.986L259.084 155.938Z" fill="white" fill-opacity="0.9"/><path d="M332.616 114.475L332.551 151.729L303.856 115.412L299.966 115.405L299.885 160.097L304.604 161.378L304.67 123.841L333.301 160.158L337.191 160.165L337.271 115.472L332.616 114.475Z" fill="white" fill-opacity="0.9"/><path d="M41.1653 166.002H47.5423V214.526H212.5V220.911H41.1653V166.002Z" fill="white" fill-opacity="0.9"/><path d="M41.1653 0H47.5423H390.623H397V220.911H352V214.526H390.623V6.3847L47.5423 6.3847V54.9084H41.1653V6.3847V0Z" fill="white" fill-opacity="0.9"/><path d="M42.5509 61.3827L23.2967 94.4847L3.97031 61.3132L0.0803697 61.3062L0 105.999L4.52764 106.007L4.59159 70.4445L22.0745 100.356L24.3064 100.36L41.1653 71.5698V159.617H47.5423V146.804L55.6017 138.651L73.8021 159.69L79.4138 159.7L58.7964 135.209L78.155 115.005L72.7346 114.995L47.5423 140.861V61.2931H42.6051L42.553 61.3828L42.5509 61.3827Z" fill="white" fill-opacity="0.9"/></svg>`;
-
     const img = new Image();
-    const blob = new Blob([svgStr], { type: 'image/svg+xml' });
-    const url  = URL.createObjectURL(blob);
     img.onload = () => {
-      // semi-transparent dark pill behind logo
-      ctx.save();
-      ctx.fillStyle = 'rgba(60,14,44,0.45)';
-      ctx.beginPath();
-      ctx.roundRect(logoX - pad * 0.5, logoY - pad * 0.3, logoW + pad, logoH + pad * 0.6, 12);
-      ctx.fill();
-      ctx.drawImage(img, logoX, logoY, logoW, logoH);
-      ctx.restore();
-      URL.revokeObjectURL(url);
+      ctx.drawImage(img, logoX, logoY, logoSize, logoSize);
       resolve();
     };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
-    img.src = url;
+    img.onerror = () => resolve();
+    img.src = 'watermark.svg';
   });
 
   // Convert canvas to blob via atob (works in all browsers including Safari)
