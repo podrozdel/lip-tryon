@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Примерка цвета губ — Makeup Kitchen</title>
-  <!-- cache bust: v12 -->
+  <!-- cache bust: v13 -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { height: 100%; }
+    html { height: 100%; background: #fff5f5; }
 
     :root {
       --brand:     #3c0e2c;
@@ -1083,8 +1083,9 @@ window.takeSelfie = async function takeSelfie() {
     const blob = dataUrlToBlob(dataUrl);
     const file = new File([blob], 'makeup-kitchen-selfie.jpg', { type: 'image/jpeg' });
 
-    // Try Web Share API (shows iOS/Android native share sheet)
-    if (navigator.share) {
+    // Web Share API with files — работает на iOS/Android, но не на десктопе
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && navigator.share) {
       try {
         await navigator.share({
           files: [file],
@@ -1092,7 +1093,6 @@ window.takeSelfie = async function takeSelfie() {
           text: 'Примерила цвет губ в Makeup Kitchen 💄',
         });
       } catch (e) {
-        // AbortError = user closed sheet (ok), other errors = fallback to download
         if (e.name !== 'AbortError') downloadImage(out);
       }
     } else {
@@ -1108,7 +1108,9 @@ function downloadImage(canvas) {
   const a = document.createElement('a');
   a.href = canvas.toDataURL('image/jpeg', 0.93);
   a.download = 'makeup-kitchen-selfie.jpg';
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
 }
 
 // ─── Init ───
