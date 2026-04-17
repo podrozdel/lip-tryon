@@ -5,25 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Примерка цвета губ — Makeup Kitchen</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --accent:    #FF6AD5;
-      --accent-dk: #C840AA;
-      --glass-bg:  rgba(255,255,255,0.08);
-      --glass-bd:  rgba(255,255,255,0.15);
+      --brand:     #3c0e2c;
+      --accent:    #cf66ab;
+      --accent-lt: #ffb9e7;
+      --bg:        #fff5f5;
+      --bg2:       #ffe8f7;
+      --card-bg:   #ffffff;
+      --card-bd:   #f0d6e8;
+      --text:      #3c0e2c;
+      --text-muted:#ac799a;
     }
 
     body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background: linear-gradient(150deg, #3A1068 0%, #8E38B0 50%, #DF80BE 100%);
+      font-family: 'Manrope', sans-serif;
+      background: var(--bg);
       min-height: 100vh;
-      color: #fff;
+      color: var(--text);
       display: flex;
       justify-content: center;
-      padding: 20px 16px 32px;
+      padding: 24px 16px 40px;
     }
 
     .app {
@@ -37,30 +42,31 @@
     /* Header */
     .header {
       text-align: center;
-      padding: 4px 0 2px;
+      padding: 4px 0 6px;
     }
     .header-logo {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: 12px;
-      font-weight: 600;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
       letter-spacing: 4px;
       text-transform: uppercase;
       color: var(--accent);
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .header h1 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 28px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 26px;
       font-weight: 300;
-      line-height: 1.2;
+      line-height: 1.25;
+      color: var(--brand);
     }
-    .header h1 em { color: var(--accent); font-style: italic; }
+    .header h1 em { color: var(--accent); font-style: normal; font-weight: 600; }
 
     /* Tabs */
     .tabs {
       display: flex;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid var(--glass-bd);
+      background: #fff;
+      border: 1.5px solid var(--card-bd);
       border-radius: 50px;
       padding: 4px;
       gap: 4px;
@@ -74,23 +80,20 @@
       font-weight: 500;
       cursor: pointer;
       transition: all .2s;
-      color: rgba(255,255,255,0.55);
+      color: var(--text-muted);
       border: none;
       background: transparent;
-      font-family: inherit;
+      font-family: 'Manrope', sans-serif;
     }
     .tab.active {
-      background: linear-gradient(135deg, var(--accent-dk), var(--accent));
+      background: var(--brand);
       color: #fff;
-      box-shadow: 0 0 16px rgba(255,106,213,.4);
     }
 
-    /* Glass card */
+    /* Card */
     .glass {
-      background: var(--glass-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--glass-bd);
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-bd);
       border-radius: 20px;
     }
 
@@ -101,7 +104,7 @@
       aspect-ratio: 3/4;
       border-radius: 20px;
       overflow: hidden;
-      background: rgba(0,0,0,0.3);
+      background: #f0d6e8;
     }
     .viewport video,
     .viewport canvas {
@@ -120,7 +123,7 @@
       aspect-ratio: 3/4;
       border-radius: 20px;
       overflow: hidden;
-      background: rgba(0,0,0,0.3);
+      background: #f0d6e8;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -137,7 +140,7 @@
       flex-direction: column;
       align-items: center;
       gap: 10px;
-      color: rgba(255,255,255,0.5);
+      color: var(--text-muted);
       z-index: 1;
     }
     .photo-placeholder span { font-size: 40px; }
@@ -147,25 +150,24 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 11px 22px;
+      padding: 11px 24px;
       border-radius: 50px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      background: linear-gradient(135deg, var(--accent-dk), var(--accent));
+      background: var(--brand);
       color: #fff;
       border: none;
-      font-family: inherit;
-      box-shadow: 0 0 20px rgba(255,106,213,.35);
-      transition: transform .15s;
+      font-family: 'Manrope', sans-serif;
+      transition: opacity .15s, transform .15s;
     }
-    .upload-btn:active { transform: scale(0.97); }
+    .upload-btn:active { transform: scale(0.97); opacity: .88; }
 
     /* Loading overlay */
     .loading-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(30,0,60,0.6);
+      background: rgba(255,245,245,0.75);
       backdrop-filter: blur(4px);
       display: flex;
       flex-direction: column;
@@ -178,24 +180,25 @@
     .loading-overlay.hidden { display: none; }
     .spinner {
       width: 36px; height: 36px;
-      border: 3px solid rgba(255,106,213,.3);
+      border: 3px solid var(--card-bd);
       border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-overlay p { font-size: 13px; color: rgba(255,255,255,.7); }
+    .loading-overlay p { font-size: 13px; color: var(--text-muted); }
 
     /* Controls */
-    .controls { padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+    .controls { padding: 18px; display: flex; flex-direction: column; gap: 18px; }
 
     .controls-label {
+      font-family: 'Montserrat', sans-serif;
       font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 2.5px;
+      font-weight: 700;
+      letter-spacing: 2px;
       text-transform: uppercase;
-      color: rgba(255,255,255,.4);
-      margin-bottom: 4px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
     }
 
     /* Color presets */
@@ -210,13 +213,14 @@
       border-radius: 50%;
       cursor: pointer;
       border: 2.5px solid transparent;
-      transition: transform .15s, border-color .15s;
+      transition: transform .15s, border-color .15s, box-shadow .15s;
       flex-shrink: 0;
-      box-shadow: 0 2px 6px rgba(0,0,0,.3);
+      box-shadow: 0 2px 6px rgba(60,14,44,.15);
     }
     .preset-dot.active {
-      border-color: #fff;
+      border-color: var(--brand);
       transform: scale(1.18);
+      box-shadow: 0 0 0 3px rgba(60,14,44,.12);
     }
 
     /* Custom HSL color picker */
@@ -231,17 +235,17 @@
       gap: 12px;
     }
     .picker-preview-swatch {
-      width: 40px; height: 40px;
+      width: 38px; height: 38px;
       border-radius: 50%;
-      border: 3px solid rgba(255,255,255,.3);
+      border: 2.5px solid var(--card-bd);
       flex-shrink: 0;
-      box-shadow: 0 0 14px rgba(0,0,0,.3);
+      box-shadow: 0 2px 8px rgba(60,14,44,.15);
     }
     .picker-hex {
       font-size: 13px;
       font-weight: 600;
-      color: rgba(255,255,255,.7);
-      font-family: monospace;
+      color: var(--text-muted);
+      font-family: 'Montserrat', monospace;
       letter-spacing: 1px;
     }
     /* SL square */
@@ -252,6 +256,7 @@
       cursor: crosshair;
       touch-action: none;
       display: block;
+      border: 1px solid var(--card-bd);
     }
     /* Hue strip */
     #hue-canvas {
@@ -261,50 +266,52 @@
       cursor: crosshair;
       touch-action: none;
       display: block;
+      border: 1px solid var(--card-bd);
     }
 
     /* Sliders */
     .slider-row { display: flex; flex-direction: column; gap: 8px; }
     .slider-header { display: flex; justify-content: space-between; align-items: center; }
-    .slider-val { font-size: 12px; font-weight: 600; color: var(--accent); }
+    .slider-val { font-size: 12px; font-weight: 700; color: var(--accent); font-family: 'Montserrat', sans-serif; }
 
     input[type=range] {
       -webkit-appearance: none;
       width: 100%;
       height: 4px;
       border-radius: 2px;
-      background: rgba(255,255,255,.15);
+      background: var(--card-bd);
       outline: none;
     }
     input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 18px; height: 18px;
+      width: 20px; height: 20px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent-dk), var(--accent));
-      box-shadow: 0 0 8px rgba(255,106,213,.5);
+      background: var(--brand);
+      box-shadow: 0 2px 6px rgba(60,14,44,.25);
       cursor: pointer;
+      border: 2px solid #fff;
     }
 
     /* Error banner */
     .error-banner {
-      background: rgba(255,80,80,.12);
-      border: 1px solid rgba(255,80,80,.3);
+      background: #fff0f0;
+      border: 1.5px solid #f5c0c0;
       border-radius: 14px;
       padding: 12px 16px;
       font-size: 13px;
-      color: rgba(255,200,200,.9);
+      color: #a03030;
       display: none;
     }
     .error-banner.show { display: block; }
 
     /* Info banner */
     .info-banner {
-      background: rgba(255,106,213,.08);
-      border: 1px solid rgba(255,106,213,.2);
+      background: #ffeef9;
+      border: 1.5px solid var(--card-bd);
       border-radius: 14px;
       padding: 10px 14px;
       font-size: 12px;
-      color: rgba(255,255,255,.6);
+      color: var(--text-muted);
       text-align: center;
       display: none;
     }
@@ -323,11 +330,12 @@
       font-weight: 600;
       text-decoration: none;
       color: #fff;
-      background: linear-gradient(135deg, var(--accent-dk), var(--accent));
-      box-shadow: 0 0 30px rgba(255,106,213,.5);
-      transition: transform .15s, box-shadow .15s;
+      background: var(--brand);
+      font-family: 'Montserrat', sans-serif;
+      letter-spacing: 0.5px;
+      transition: opacity .15s, transform .15s;
     }
-    .cta-btn:active { transform: scale(0.98); box-shadow: 0 0 15px rgba(255,106,213,.3); }
+    .cta-btn:active { transform: scale(0.98); opacity: .88; }
     .cta-arrow { font-size: 18px; }
 
     .hidden { display: none !important; }
@@ -338,12 +346,12 @@
       bottom: 12px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,.45);
+      background: rgba(60,14,44,.6);
       backdrop-filter: blur(8px);
       border-radius: 20px;
       padding: 6px 14px;
       font-size: 11px;
-      color: rgba(255,255,255,.7);
+      color: rgba(255,255,255,.85);
       white-space: nowrap;
       z-index: 5;
       pointer-events: none;
@@ -355,7 +363,7 @@
 
   <!-- Header -->
   <div class="header">
-    <div class="header-logo">✦ Makeup Kitchen ✦</div>
+    <div class="header-logo">Makeup Kitchen</div>
     <h1>Примерь свой<br><em>цвет губ</em></h1>
   </div>
 
