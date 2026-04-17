@@ -383,10 +383,29 @@ async function startCamera() {
 
   if (!location.protocol.startsWith('https') && location.hostname !== 'localhost') {
     camLoading.classList.add('hidden');
-    showError('Камера требует HTTPS. Используй режим «Фото» или открой через защищённое соединение.');
+    showError('Камера требует HTTPS. Используй режим «Фото».');
     switchTab('photo'); return;
   }
 
+  // Start camera first — video plays immediately, no waiting for model
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 854 } }
+    });
+    video = document.createElement('video');
+    video.srcObject = stream;
+    video.autoplay = true; video.playsInline = true; video.muted = true;
+    await new Promise(r => video.onloadedmetadata = r);
+    overlayCanvas.width  = video.videoWidth;
+    overlayCanvas.height = video.videoHeight;
+  } catch(e) {
+    camLoading.classList.add('hidden');
+    showError('Камера недоступна. Используй режим «Фото».');
+    switchTab('photo'); return;
+  }
+
+  // Load model in background — video already streaming
+  camLoading.querySelector('p').textContent = 'Загружаем модель...';
   try {
     await initDetector();
   } catch(e) {
@@ -394,60 +413,43 @@ async function startCamera() {
     showError('Не удалось загрузить модель: ' + e.message); return;
   }
 
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 854 } }
-    });
-    video = document.createElement('video');
-    video.srcObject = stream;
-    video.autoplay = true;
-    video.playsInline = true;
-    video.muted = true;
-    await new Promise(r => video.onloadedmetadata = r);
+  camLoading.classList.add('hidden');
 
-    const vp = document.getElementById('camera-viewport');
-    overlayCanvas.width  = video.videoWidth;
-    overlayCanvas.height = video.videoHeight;
-
-    camLoading.classList.add('hidden');
-    rafId = requestAnimationFrame(cameraLoop);
-  } catch(e) {
-    camLoading.classList.add('hidden');
-    showError('Камера недоступна. Используй режим «Фото».');
-    switchTab('photo');
-  }
+  // Two independent loops: render (rAF) + detect (async interval)
+  renderLoop();
+  detectLoop();
 }
 
-async function cameraLoop(ts) {
-  if (state.mode !== 'camera') return;
-  rafId = requestAnimationFrame(cameraLoop);
+// Render loop: draws video every frame — never blocked by detection
+function renderLoop() {
+  if (state.mode !== 'camera') { rafId = requestAnimationFrame(renderLoop); return; }
+  rafId = requestAnimationFrame(renderLoop);
 
   const w = overlayCanvas.width, h = overlayCanvas.height;
   overlayCtx.clearRect(0, 0, w, h);
-
-  // Draw video mirrored onto overlay canvas background
   overlayCtx.save();
   overlayCtx.scale(-1, 1);
   overlayCtx.drawImage(video, -w, 0, w, h);
   overlayCtx.restore();
 
-  frameCount++;
-  if (frameCount % 4 === 0 && detector) {
+  if (lastLandmarks) drawLipColor(overlayCtx, lastLandmarks, w, h);
+}
+
+// Detection loop: runs independently, never blocks render
+async function detectLoop() {
+  while (state.mode === 'camera' && detector) {
     try {
       const faces = await detector.estimateFaces(video, { flipHorizontal: false });
       if (faces.length > 0) {
         const kp = faces[0].keypoints;
-        // Normalize to 0-1 and mirror X
         lastLandmarks = kp.map(pt => ({ x: 1 - pt.x / video.videoWidth, y: pt.y / video.videoHeight }));
         detectHint.style.display = 'none';
       } else {
         detectHint.style.display = 'block';
       }
     } catch {}
-  }
-
-  if (lastLandmarks) {
-    drawLipColor(overlayCtx, lastLandmarks, w, h);
+    // Yield to let render frames through between detections
+    await new Promise(r => setTimeout(r, 0));
   }
 }
 
