@@ -201,50 +201,66 @@
     /* Color presets */
     .presets-row {
       display: flex;
-      gap: 8px;
+      gap: 7px;
       flex-wrap: wrap;
       align-items: center;
     }
     .preset-dot {
-      width: 30px; height: 30px;
+      width: 32px; height: 32px;
       border-radius: 50%;
       cursor: pointer;
-      border: 2px solid transparent;
+      border: 2.5px solid transparent;
       transition: transform .15s, border-color .15s;
       flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,.3);
     }
     .preset-dot.active {
       border-color: #fff;
-      transform: scale(1.15);
+      transform: scale(1.18);
     }
-    .color-input-wrap {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      overflow: hidden;
-      border: 2px solid rgba(255,255,255,.3);
-      cursor: pointer;
-      position: relative;
-      flex-shrink: 0;
+
+    /* Custom HSL color picker */
+    .color-picker-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
-    .color-input-wrap input[type=color] {
-      position: absolute;
-      inset: -4px;
-      width: calc(100% + 8px);
-      height: calc(100% + 8px);
-      border: none;
-      cursor: pointer;
-      opacity: 0;
-    }
-    .color-input-wrap::after {
-      content: '+';
-      position: absolute;
-      inset: 0;
+    .picker-preview-row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 16px;
+      gap: 12px;
+    }
+    .picker-preview-swatch {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,.3);
+      flex-shrink: 0;
+      box-shadow: 0 0 14px rgba(0,0,0,.3);
+    }
+    .picker-hex {
+      font-size: 13px;
+      font-weight: 600;
       color: rgba(255,255,255,.7);
-      pointer-events: none;
+      font-family: monospace;
+      letter-spacing: 1px;
+    }
+    /* SL square */
+    #sl-canvas {
+      width: 100%;
+      height: 160px;
+      border-radius: 12px;
+      cursor: crosshair;
+      touch-action: none;
+      display: block;
+    }
+    /* Hue strip */
+    #hue-canvas {
+      width: 100%;
+      height: 22px;
+      border-radius: 11px;
+      cursor: crosshair;
+      touch-action: none;
+      display: block;
     }
 
     /* Sliders */
@@ -390,14 +406,24 @@
 
   <!-- Controls -->
   <div class="glass controls">
-    <!-- Color presets -->
+
+    <!-- Preset swatches -->
     <div>
-      <div class="controls-label">Выбери цвет</div>
-      <div class="presets-row" id="presets-row">
-        <!-- dots rendered by JS -->
-        <div class="color-input-wrap" title="Свой цвет">
-          <input type="color" id="custom-color" value="#B84040" />
-        </div>
+      <div class="controls-label">Готовые оттенки</div>
+      <div class="presets-row" id="presets-row"></div>
+    </div>
+
+    <!-- Custom color picker -->
+    <div class="color-picker-wrap">
+      <div class="controls-label">Свой цвет</div>
+      <!-- SL square -->
+      <canvas id="sl-canvas"></canvas>
+      <!-- Hue strip -->
+      <canvas id="hue-canvas"></canvas>
+      <!-- Preview -->
+      <div class="picker-preview-row">
+        <div class="picker-preview-swatch" id="picker-swatch"></div>
+        <span class="picker-hex" id="picker-hex">#B84040</span>
       </div>
     </div>
 
@@ -463,7 +489,6 @@ const opacitySlider = document.getElementById('opacity-slider');
 const glossSlider   = document.getElementById('gloss-slider');
 const opacityVal    = document.getElementById('opacity-val');
 const glossVal      = document.getElementById('gloss-val');
-const customColor   = document.getElementById('custom-color');
 const fileInput     = document.getElementById('file-input');
 const errorBanner   = document.getElementById('error-banner');
 const infoBanner    = document.getElementById('info-banner');
@@ -473,34 +498,152 @@ const detectHint    = document.getElementById('detect-hint');
 const photoArea     = document.getElementById('photo-area');
 const photoPlaceholder = document.getElementById('photo-placeholder');
 
+// ─── HSL color picker ───
+const slCanvas   = document.getElementById('sl-canvas');
+const slCtx      = slCanvas.getContext('2d');
+const hueCanvas  = document.getElementById('hue-canvas');
+const hueCtx     = hueCanvas.getContext('2d');
+const pickerSwatch = document.getElementById('picker-swatch');
+const pickerHex  = document.getElementById('picker-hex');
+
+// Current hue (0-360), sat (0-1), light (0-1)
+let pickerH = 0, pickerS = 0.7, pickerL = 0.4;
+
+function hslToHex(h, s, l) {
+  const a = s * Math.min(l, 1 - l);
+  const f = n => { const k = (n + h / 30) % 12; return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); };
+  return '#' + [f(0),f(8),f(4)].map(x => Math.round(x*255).toString(16).padStart(2,'0')).join('');
+}
+
+function hexToHsl(hex) {
+  let r = parseInt(hex.slice(1,3),16)/255, g = parseInt(hex.slice(3,5),16)/255, b = parseInt(hex.slice(5,7),16)/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h=0, s=0, l=(max+min)/2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+    if (max===r) h=((g-b)/d+(g<b?6:0))/6;
+    else if (max===g) h=((b-r)/d+2)/6;
+    else h=((r-g)/d+4)/6;
+  }
+  return [h*360, s, l];
+}
+
+function drawSLSquare() {
+  const w = slCanvas.width, h = slCanvas.height;
+  // White → hue gradient (left-right)
+  const gradH = slCtx.createLinearGradient(0,0,w,0);
+  gradH.addColorStop(0, 'white');
+  gradH.addColorStop(1, `hsl(${pickerH},100%,50%)`);
+  slCtx.fillStyle = gradH;
+  slCtx.fillRect(0,0,w,h);
+  // Transparent → black (top-bottom)
+  const gradV = slCtx.createLinearGradient(0,0,0,h);
+  gradV.addColorStop(0, 'rgba(0,0,0,0)');
+  gradV.addColorStop(1, 'black');
+  slCtx.fillStyle = gradV;
+  slCtx.fillRect(0,0,w,h);
+  // Cursor
+  // Convert HSL to SL square coords: x=S, y=1-L*(1/(1-S/2)) approx
+  // Use simpler: sat maps to x, "value" maps to y where value=L+S*min(L,1-L)
+  const v = pickerL + pickerS * Math.min(pickerL, 1-pickerL);
+  const s2 = v > 0 ? 2*(1-pickerL/v) : 0;
+  const cx = s2 * w, cy = (1-v) * h;
+  slCtx.beginPath();
+  slCtx.arc(cx, cy, 7, 0, Math.PI*2);
+  slCtx.strokeStyle = '#fff';
+  slCtx.lineWidth = 2.5;
+  slCtx.stroke();
+  slCtx.beginPath();
+  slCtx.arc(cx, cy, 5, 0, Math.PI*2);
+  slCtx.strokeStyle = 'rgba(0,0,0,.4)';
+  slCtx.lineWidth = 1;
+  slCtx.stroke();
+}
+
+function drawHueStrip() {
+  const w = hueCanvas.width, h = hueCanvas.height;
+  const grad = hueCtx.createLinearGradient(0,0,w,0);
+  for (let i=0; i<=360; i+=30) grad.addColorStop(i/360, `hsl(${i},100%,50%)`);
+  hueCtx.fillStyle = grad;
+  hueCtx.fillRect(0,0,w,h);
+  // Cursor
+  const cx = (pickerH/360)*w;
+  hueCtx.beginPath();
+  hueCtx.arc(cx, h/2, h/2-1, 0, Math.PI*2);
+  hueCtx.fillStyle = `hsl(${pickerH},100%,50%)`;
+  hueCtx.fill();
+  hueCtx.strokeStyle = '#fff';
+  hueCtx.lineWidth = 2;
+  hueCtx.stroke();
+}
+
+function updatePickerFromHSL() {
+  const hex = hslToHex(pickerH, pickerS, pickerL);
+  state.color = hex;
+  pickerSwatch.style.background = hex;
+  pickerHex.textContent = hex.toUpperCase();
+  presetsRow.querySelectorAll('.preset-dot').forEach(d => d.classList.remove('active'));
+  drawSLSquare();
+  drawHueStrip();
+  if (state.mode === 'photo') redrawPhoto();
+}
+
+function resizePickerCanvases() {
+  const w = slCanvas.parentElement.clientWidth - 36;
+  slCanvas.width  = w; slCanvas.height = 160;
+  hueCanvas.width = w; hueCanvas.height = 22;
+  updatePickerFromHSL();
+}
+
+// SL square interaction
+function slPointer(e) {
+  const r = slCanvas.getBoundingClientRect();
+  const x = Math.max(0, Math.min(1, (e.clientX-r.left)/r.width));
+  const y = Math.max(0, Math.min(1, (e.clientY-r.top)/r.height));
+  // Convert (x=saturation, y=value) → HSL
+  const v = 1 - y;
+  const s = x;
+  pickerL = v * (1 - s/2);
+  pickerS = pickerL === 0 || pickerL === 1 ? 0 : (v - pickerL) / Math.min(pickerL, 1-pickerL);
+  updatePickerFromHSL();
+}
+let slDragging = false;
+slCanvas.addEventListener('pointerdown', e => { slDragging=true; slCanvas.setPointerCapture(e.pointerId); slPointer(e); });
+slCanvas.addEventListener('pointermove', e => { if(slDragging) slPointer(e); });
+slCanvas.addEventListener('pointerup', () => slDragging=false);
+
+// Hue strip interaction
+function huePointer(e) {
+  const r = hueCanvas.getBoundingClientRect();
+  pickerH = Math.max(0, Math.min(360, ((e.clientX-r.left)/r.width)*360));
+  updatePickerFromHSL();
+}
+let hueDragging = false;
+hueCanvas.addEventListener('pointerdown', e => { hueDragging=true; hueCanvas.setPointerCapture(e.pointerId); huePointer(e); });
+hueCanvas.addEventListener('pointermove', e => { if(hueDragging) huePointer(e); });
+hueCanvas.addEventListener('pointerup', () => hueDragging=false);
+
 // ─── Build color presets ───
 const presetsRow = document.getElementById('presets-row');
-const colorWrap  = presetsRow.querySelector('.color-input-wrap');
 PRESETS.forEach(hex => {
   const dot = document.createElement('div');
   dot.className = 'preset-dot';
   dot.style.background = hex;
   dot.title = hex;
-  dot.onclick = () => selectColor(hex, dot);
-  presetsRow.insertBefore(dot, colorWrap);
+  dot.onclick = () => {
+    [pickerH, pickerS, pickerL] = hexToHsl(hex);
+    presetsRow.querySelectorAll('.preset-dot').forEach(d => d.classList.remove('active'));
+    dot.classList.add('active');
+    updatePickerFromHSL();
+  };
+  presetsRow.appendChild(dot);
 });
-// Mark default preset active
-const defaultDot = presetsRow.querySelector(`.preset-dot[title="${state.color}"]`);
-if (defaultDot) defaultDot.classList.add('active');
 
-function selectColor(hex, dot) {
-  state.color = hex;
-  customColor.value = hex;
-  presetsRow.querySelectorAll('.preset-dot').forEach(d => d.classList.remove('active'));
-  if (dot) dot.classList.add('active');
-  if (state.mode === 'photo') redrawPhoto();
-}
-
-customColor.addEventListener('input', () => {
-  state.color = customColor.value;
-  presetsRow.querySelectorAll('.preset-dot').forEach(d => d.classList.remove('active'));
-  if (state.mode === 'photo') redrawPhoto();
-});
+// Init picker with default color
+;[pickerH, pickerS, pickerL] = hexToHsl(state.color);
+requestAnimationFrame(resizePickerCanvases);
+window.addEventListener('resize', resizePickerCanvases);
 
 opacitySlider.addEventListener('input', () => {
   state.opacity = opacitySlider.value / 100;
