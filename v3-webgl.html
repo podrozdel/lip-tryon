@@ -2,22 +2,495 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>V3 — скоро</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Примерка цвета губ — Makeup Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
-    body { margin:0; background:#fff5f5; display:flex; align-items:center; justify-content:center; min-height:100vh; font-family:'Montserrat',sans-serif; color:#3c0e2c; }
-    .wrap { text-align:center; }
-    .badge { font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:#cf66ab; margin-bottom:16px; }
-    h1 { font-size:28px; font-weight:300; margin-bottom:8px; }
-    p { font-size:14px; color:#ac799a; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #3c0e2c; --accent: #cf66ab;
+      --bg: #fff5f5; --card-bg: #ffffff; --card-bd: #f0d6e8;
+      --text: #3c0e2c; --text-muted: #ac799a;
+    }
+    body { font-family:'Manrope',sans-serif; background:var(--bg); min-height:100vh; color:var(--text); display:flex; justify-content:center; align-items:flex-start; padding:24px 16px 40px; }
+    .app { width:100%; max-width:480px; display:flex; flex-direction:column; gap:14px; }
+    @media(min-width:768px){
+      html,body{height:100%;}
+      body{padding:40px 32px 48px;align-items:center;min-height:100vh;}
+      .app{max-width:960px;display:grid;grid-template-columns:1fr 400px;grid-template-rows:auto auto 1fr auto;gap:20px;align-items:start;}
+      .header{grid-column:1/-1;text-align:left;padding:0;display:flex;align-items:baseline;gap:20px;}
+      .header h1{font-size:36px;}.header-logo{font-size:12px;margin-bottom:0;flex-shrink:0;}
+      .tabs{grid-column:1;grid-row:2;}
+      #section-camera,#section-photo{grid-column:1;grid-row:3;}
+      .error-banner{grid-column:1;grid-row:4;}
+      .glass.controls{grid-column:2;grid-row:2/5;}
+      .cta-btn{grid-column:2;grid-row:5;}
+      .viewport,.photo-area{aspect-ratio:4/5;}
+    }
+    .header{text-align:center;padding:4px 0 6px;}
+    .header-logo{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--accent);margin-bottom:8px;}
+    .header h1{font-family:'Montserrat',sans-serif;font-size:26px;font-weight:300;line-height:1.25;color:var(--brand);}
+    .header h1 em{color:var(--accent);font-style:normal;font-weight:600;}
+    .tabs{display:flex;background:#fff;border:1.5px solid var(--card-bd);border-radius:50px;padding:4px;gap:4px;}
+    .tab{flex:1;text-align:center;padding:9px 0;border-radius:50px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;color:var(--text-muted);border:none;background:transparent;font-family:'Manrope',sans-serif;}
+    .tab.active{background:var(--brand);color:#fff;}
+    .glass{background:var(--card-bg);border:1.5px solid var(--card-bd);border-radius:20px;}
+    .viewport{position:relative;width:100%;aspect-ratio:3/4;border-radius:20px;overflow:hidden;background:#f0d6e8;}
+    .viewport canvas{position:absolute;inset:0;width:100%;height:100%;}
+    .photo-area{position:relative;width:100%;aspect-ratio:3/4;border-radius:20px;overflow:hidden;background:#f0d6e8;display:flex;align-items:center;justify-content:center;}
+    .photo-area canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
+    .photo-placeholder{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--text-muted);z-index:1;}
+    .photo-placeholder span{font-size:40px;}.photo-placeholder p{font-size:13px;}
+    .upload-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;background:var(--brand);color:#fff;border:none;font-family:'Manrope',sans-serif;transition:opacity .15s,transform .15s;}
+    .upload-btn:active{transform:scale(.97);opacity:.88;}
+    .loading-overlay{position:absolute;inset:0;background:rgba(255,245,245,.8);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:10;border-radius:20px;}
+    .loading-overlay.hidden{display:none;}
+    .spinner{width:36px;height:36px;border:3px solid var(--card-bd);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading-overlay p{font-size:13px;color:var(--text-muted);}
+    .controls{padding:18px;display:flex;flex-direction:column;gap:18px;}
+    .controls-label{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
+    .presets-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+    .preset-dot{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:transform .15s,border-color .15s;flex-shrink:0;box-shadow:0 2px 6px rgba(60,14,44,.15);}
+    .preset-dot.active{border-color:var(--brand);transform:scale(1.18);}
+    .color-picker-wrap{display:flex;flex-direction:column;gap:10px;}
+    .picker-preview-row{display:flex;align-items:center;gap:12px;}
+    .picker-preview-swatch{width:38px;height:38px;border-radius:50%;border:2.5px solid var(--card-bd);flex-shrink:0;box-shadow:0 2px 8px rgba(60,14,44,.15);}
+    .picker-hex{font-size:13px;font-weight:600;color:var(--text-muted);font-family:'Montserrat',monospace;letter-spacing:1px;}
+    #sl-canvas{width:100%;height:160px;border-radius:12px;cursor:crosshair;touch-action:none;display:block;border:1px solid var(--card-bd);}
+    #hue-canvas{width:100%;height:22px;border-radius:11px;cursor:crosshair;touch-action:none;display:block;border:1px solid var(--card-bd);}
+    .slider-row{display:flex;flex-direction:column;gap:8px;}
+    .slider-header{display:flex;justify-content:space-between;align-items:center;}
+    .slider-val{font-size:12px;font-weight:700;color:var(--accent);font-family:'Montserrat',sans-serif;}
+    input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;background:var(--card-bd);outline:none;}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--brand);box-shadow:0 2px 6px rgba(60,14,44,.25);cursor:pointer;border:2px solid #fff;}
+    .error-banner{background:#fff0f0;border:1.5px solid #f5c0c0;border-radius:14px;padding:12px 16px;font-size:13px;color:#a03030;display:none;}
+    .error-banner.show{display:block;}
+    .cta-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:16px;border-radius:50px;font-size:15px;font-weight:600;text-decoration:none;color:#fff;background:var(--brand);font-family:'Montserrat',sans-serif;letter-spacing:.5px;transition:opacity .15s,transform .15s;}
+    .cta-btn:active{transform:scale(.98);opacity:.88;}
+    .detect-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(60,14,44,.6);backdrop-filter:blur(8px);border-radius:20px;padding:6px 14px;font-size:11px;color:rgba(255,255,255,.85);white-space:nowrap;z-index:5;pointer-events:none;}
+    .hidden{display:none!important;}
+    .version-badge{position:fixed;bottom:12px;right:12px;z-index:100;background:var(--brand);color:#fff;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 10px;border-radius:20px;opacity:.7;}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="badge">Makeup Kitchen</div>
-    <h1>V3 · WebGL</h1>
-    <p>В разработке — улучшенное качество наложения цвета</p>
+<div class="app">
+  <div class="header">
+    <div class="header-logo">Makeup Kitchen</div>
+    <h1>Примерь свой<br><em>цвет губ</em></h1>
   </div>
+  <div class="tabs">
+    <button class="tab active" id="tab-camera" onclick="switchTab('camera')">📷 Камера</button>
+    <button class="tab" id="tab-photo" onclick="switchTab('photo')">🖼 Фото</button>
+  </div>
+  <div id="section-camera">
+    <div class="viewport glass" id="camera-viewport">
+      <canvas id="gl-canvas"></canvas>
+      <div class="loading-overlay" id="camera-loading"><div class="spinner"></div><p>Загружаем модель...</p></div>
+      <div class="detect-hint" id="detect-hint">Направь камеру на лицо</div>
+    </div>
+  </div>
+  <div id="section-photo" class="hidden">
+    <div class="photo-area glass" id="photo-area">
+      <canvas id="photo-canvas" class="hidden"></canvas>
+      <div class="photo-placeholder" id="photo-placeholder"><span>💄</span><p>Загрузи фото для примерки</p></div>
+    </div>
+    <div style="margin-top:12px;text-align:center;">
+      <label class="upload-btn" for="file-input">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4l4 4"/></svg>
+        Выбрать фото
+      </label>
+      <input type="file" id="file-input" accept="image/*" capture="user" style="display:none"/>
+    </div>
+  </div>
+  <div class="error-banner" id="error-banner"></div>
+  <div class="glass controls">
+    <div><div class="controls-label">Готовые оттенки</div><div class="presets-row" id="presets-row"></div></div>
+    <div class="color-picker-wrap">
+      <div class="controls-label">Свой цвет</div>
+      <canvas id="sl-canvas"></canvas>
+      <canvas id="hue-canvas"></canvas>
+      <div class="picker-preview-row">
+        <div class="picker-preview-swatch" id="picker-swatch"></div>
+        <span class="picker-hex" id="picker-hex">#B84040</span>
+      </div>
+    </div>
+    <div class="slider-row">
+      <div class="slider-header"><div class="controls-label" style="margin-bottom:0">Интенсивность</div><span class="slider-val" id="opacity-val">60%</span></div>
+      <input type="range" id="opacity-slider" min="20" max="90" step="5" value="60"/>
+    </div>
+    <div class="slider-row">
+      <div class="slider-header"><div class="controls-label" style="margin-bottom:0">Блеск</div><span class="slider-val" id="gloss-val">30%</span></div>
+      <input type="range" id="gloss-slider" min="0" max="100" step="5" value="30"/>
+    </div>
+  </div>
+  <a class="cta-btn" href="https://b918851.yclients.com/company/167253/record-type?" target="_blank" rel="noopener">Записаться на макияж <span style="font-size:18px">→</span></a>
+</div>
+<div class="version-badge">V3 · Soft Light</div>
+
+<script type="module">
+import { FaceLandmarker, FilesetResolver } from
+  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+
+const OUTER = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
+const INNER = [78,191,80,81,82,13,312,311,310,415,308,324,318,402,317,14,87,178,88,95];
+const PRESETS = ['#C8A882','#D4856A','#C4624A','#B84040','#8B2252','#6B1F3A','#E8758A','#FF6AD5','#C840AA','#D4506B','#9B3060','#5C1F3A'];
+
+const state = { color:'#B84040', opacity:0.6, gloss:0.3, mode:'camera' };
+
+// ── WebGL setup ──────────────────────────────────────────────
+const glCanvas = document.getElementById('gl-canvas');
+const gl = glCanvas.getContext('webgl', { premultipliedAlpha: false, alpha: true });
+
+const VS = `
+  attribute vec2 aPos;
+  attribute vec2 aUV;
+  varying vec2 vUV;
+  void main(){ gl_Position=vec4(aPos,0,1); vUV=aUV; }
+`;
+
+// Camera pass: just draw the texture (mirrored)
+const FS_CAM = `
+  precision mediump float;
+  uniform sampler2D uTex;
+  varying vec2 vUV;
+  void main(){ gl_FragColor=texture2D(uTex,vec2(1.0-vUV.x,vUV.y)); }
+`;
+
+// Lip soft-light pass: reads camera texture, applies soft-light blend with lip color
+const FS_LIP = `
+  precision mediump float;
+  uniform sampler2D uTex;
+  uniform vec3 uColor;
+  uniform float uOpacity;
+  uniform float uGloss;
+  uniform vec2 uGlossCentre;
+  varying vec2 vUV;
+
+  vec3 softLight(vec3 base, vec3 blend){
+    vec3 check=step(vec3(0.5),blend);
+    vec3 a=base-(1.0-2.0*blend)*base*(1.0-base);
+    vec3 b=base+(2.0*blend-1.0)*(sqrt(base)-base);
+    return mix(a,b,check);
+  }
+
+  void main(){
+    vec2 uv=vec2(1.0-vUV.x,vUV.y);
+    vec4 orig=texture2D(uTex,uv);
+    vec3 blended=softLight(orig.rgb, uColor);
+    vec3 result=mix(orig.rgb, blended, uOpacity);
+
+    // Gloss: specular highlight near cupid's bow
+    if(uGloss>0.0){
+      vec2 delta=vUV-uGlossCentre;
+      delta.x*=0.5; // wider horizontally
+      float dist=length(delta);
+      float spec=smoothstep(0.12,0.0,dist)*uGloss*0.55;
+      result=min(vec3(1.0), result+spec);
+    }
+
+    gl_FragColor=vec4(result,1.0);
+  }
+`;
+
+function createShader(type, src){
+  const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s); return s;
+}
+function createProgram(vs,fs){
+  const p=gl.createProgram();
+  gl.attachShader(p,createShader(gl.VERTEX_SHADER,vs));
+  gl.attachShader(p,createShader(gl.FRAGMENT_SHADER,fs));
+  gl.linkProgram(p); return p;
+}
+
+const camProg = createProgram(VS, FS_CAM);
+const lipProg = createProgram(VS, FS_LIP);
+
+// Full-screen quad
+const quadBuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+  -1,-1, 0,0,   1,-1, 1,0,  -1,1, 0,1,   1,1, 1,1
+]), gl.STATIC_DRAW);
+
+// Camera texture
+const camTex = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, camTex);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+function bindQuad(prog){
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+  const aPos=gl.getAttribLocation(prog,'aPos');
+  const aUV =gl.getAttribLocation(prog,'aUV');
+  gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,16,0);
+  gl.enableVertexAttribArray(aUV);  gl.vertexAttribPointer(aUV, 2,gl.FLOAT,false,16,8);
+}
+
+function hexToRgb01(hex){
+  return [parseInt(hex.slice(1,3),16)/255, parseInt(hex.slice(3,5),16)/255, parseInt(hex.slice(5,7),16)/255];
+}
+
+// Triangulate a polygon via fan from centroid
+function fanTriangulate(pts) {
+  const cx = pts.reduce((s,p)=>s+p[0],0)/pts.length;
+  const cy = pts.reduce((s,p)=>s+p[1],0)/pts.length;
+  const verts = [];
+  for(let i=0;i<pts.length;i++){
+    const a=pts[i], b=pts[(i+1)%pts.length];
+    verts.push(cx,cy, a[0],a[1], b[0],b[1]);
+  }
+  return verts;
+}
+
+// Convert lip landmark indices to NDC coords
+function lipVerts(landmarks, indices, w, h, mirror=true) {
+  return indices.map(idx => {
+    const pt = landmarks[idx];
+    const x = mirror ? (1 - pt.x) : pt.x;
+    return [x*2-1, -(pt.y*2-1)]; // NDC: x in [-1,1], y flipped
+  });
+}
+
+// Stencil buffer for lip mask
+gl.enable(gl.STENCIL_TEST);
+
+function renderFrame(landmarks, videoEl) {
+  const w = glCanvas.width, h = glCanvas.height;
+  gl.viewport(0, 0, w, h);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+
+  // Upload camera frame
+  gl.bindTexture(gl.TEXTURE_2D, camTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, videoEl);
+
+  // Pass 1: Draw camera everywhere, stencil=0 (no lip)
+  gl.stencilFunc(gl.ALWAYS, 0, 0xFF);
+  gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+  gl.colorMask(true,true,true,true);
+  gl.useProgram(camProg);
+  bindQuad(camProg);
+  gl.uniform1i(gl.getUniformLocation(camProg,'uTex'), 0);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+  if (!landmarks) return;
+
+  // Pass 2: Write stencil=1 in lip region (no color write)
+  gl.stencilFunc(gl.ALWAYS, 1, 0xFF);
+  gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+  gl.colorMask(false,false,false,false);
+
+  // Draw outer lip polygon
+  const outerPts = lipVerts(landmarks, OUTER, w, h, true);
+  const innerPts = lipVerts(landmarks, INNER, w, h, true);
+  const outerTris = fanTriangulate(outerPts);
+
+  const lipBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, lipBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outerTris), gl.STREAM_DRAW);
+
+  gl.useProgram(camProg);
+  const aPos2 = gl.getAttribLocation(camProg,'aPos');
+  const aUV2  = gl.getAttribLocation(camProg,'aUV');
+  gl.enableVertexAttribArray(aPos2); gl.vertexAttribPointer(aPos2,2,gl.FLOAT,false,8,0);
+  gl.disableVertexAttribArray(aUV2);
+  gl.drawArrays(gl.TRIANGLES, 0, outerTris.length/2);
+
+  // Carve mouth hole: stencil=0 inside inner lip
+  gl.stencilFunc(gl.ALWAYS, 0, 0xFF);
+  const innerTris = fanTriangulate(innerPts);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(innerTris), gl.STREAM_DRAW);
+  gl.drawArrays(gl.TRIANGLES, 0, innerTris.length/2);
+
+  // Pass 3: Draw soft-light lip color only where stencil=1
+  gl.stencilFunc(gl.EQUAL, 1, 0xFF);
+  gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+  gl.colorMask(true,true,true,true);
+
+  gl.useProgram(lipProg);
+  bindQuad(lipProg);
+  gl.uniform1i(gl.getUniformLocation(lipProg,'uTex'), 0);
+  gl.uniform3fv(gl.getUniformLocation(lipProg,'uColor'), hexToRgb01(state.color));
+  gl.uniform1f(gl.getUniformLocation(lipProg,'uOpacity'), state.opacity);
+  gl.uniform1f(gl.getUniformLocation(lipProg,'uGloss'), state.gloss);
+
+  // Gloss centre = top of upper lip (landmark 13), in UV space (0-1, not mirrored for shader)
+  const glC = landmarks[13];
+  gl.uniform2fv(gl.getUniformLocation(lipProg,'uGlossCentre'), [1-glC.x, glC.y]);
+
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.deleteBuffer(lipBuf);
+}
+
+// ── Canvas 2D for photo mode (simpler, no WebGL needed) ──
+const photoCanvas = document.getElementById('photo-canvas');
+const photoCtx    = photoCanvas.getContext('2d');
+
+function drawLipColor2D(ctx, landmarks, w, h) {
+  ctx.save();
+  const path = new Path2D();
+  OUTER.forEach((idx,i)=>{const pt=landmarks[idx];i===0?path.moveTo(pt.x*w,pt.y*h):path.lineTo(pt.x*w,pt.y*h);});
+  path.closePath();
+  INNER.forEach((idx,i)=>{const pt=landmarks[idx];i===0?path.moveTo(pt.x*w,pt.y*h):path.lineTo(pt.x*w,pt.y*h);});
+  path.closePath();
+  ctx.clip(path,'evenodd');
+  // Soft-light approximation in 2D: overlay then color
+  ctx.globalCompositeOperation='color';
+  ctx.globalAlpha=state.opacity*0.85;
+  ctx.fillStyle=state.color;
+  ctx.fillRect(0,0,w,h);
+  ctx.globalCompositeOperation='overlay';
+  ctx.globalAlpha=state.opacity*0.3;
+  ctx.fillStyle=state.color;
+  ctx.fillRect(0,0,w,h);
+  if(state.gloss>0.02){
+    const cx=landmarks[13].x*w, cy=landmarks[13].y*h-3;
+    const r=Math.max(w,h)*0.05;
+    const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,r*2.5);
+    grad.addColorStop(0,`rgba(255,255,255,${state.gloss*0.7})`);
+    grad.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.globalCompositeOperation='screen';
+    ctx.globalAlpha=1;
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,0,w,h);
+  }
+  ctx.restore();
+}
+
+// ── MediaPipe ──────────────────────────────────────────────
+let faceLandmarker=null, video=null, lastLandmarks=null, frameCount=0, detecting=false;
+
+async function initMP(){
+  const vision=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+  faceLandmarker=await FaceLandmarker.createFromOptions(vision,{
+    baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',delegate:'GPU'},
+    runningMode:'VIDEO', numFaces:1
+  });
+  return true;
+}
+
+async function startCamera(){
+  document.getElementById('camera-loading').classList.remove('hidden');
+  if(!location.protocol.startsWith('https')&&location.hostname!=='localhost'){
+    document.getElementById('camera-loading').classList.add('hidden');
+    showError('Камера требует HTTPS. Используй режим «Фото».');
+    switchTab('photo'); return;
+  }
+  const ok=await initMP().catch(()=>false);
+  if(!ok){document.getElementById('camera-loading').classList.add('hidden');showError('Не удалось загрузить модель.');return;}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:854}}});
+    video=document.createElement('video');
+    video.srcObject=stream; video.autoplay=true; video.playsInline=true; video.muted=true;
+    await new Promise(r=>video.onloadedmetadata=r);
+    glCanvas.width=video.videoWidth; glCanvas.height=video.videoHeight;
+    document.getElementById('camera-loading').classList.add('hidden');
+    requestAnimationFrame(cameraLoop);
+  }catch(e){
+    document.getElementById('camera-loading').classList.add('hidden');
+    showError('Камера недоступна. Используй режим «Фото».');
+    switchTab('photo');
+  }
+}
+
+function cameraLoop(ts){
+  if(state.mode!=='camera'){requestAnimationFrame(cameraLoop);return;}
+  requestAnimationFrame(cameraLoop);
+  frameCount++;
+  if(frameCount%3===0&&faceLandmarker&&!detecting){
+    detecting=true;
+    try{
+      const res=faceLandmarker.detectForVideo(video,ts);
+      if(res.faceLandmarks&&res.faceLandmarks.length>0){
+        lastLandmarks=res.faceLandmarks[0];
+        document.getElementById('detect-hint').style.display='none';
+      } else {
+        document.getElementById('detect-hint').style.display='block';
+      }
+    }catch{}
+    detecting=false;
+  }
+  renderFrame(lastLandmarks, video);
+}
+
+// ── Photo mode ──────────────────────────────────────────────
+let photoImage=null, photoLandmarks=null;
+
+document.getElementById('file-input').addEventListener('change',async(e)=>{
+  const file=e.target.files[0]; if(!file)return;
+  document.getElementById('photo-placeholder').style.display='none';
+  photoCanvas.classList.add('hidden');
+  photoImage=await new Promise(r=>{const img=new Image();img.onload=()=>r(img);img.src=URL.createObjectURL(file);});
+  if(!faceLandmarker){const ok=await initMP().catch(()=>false);if(!ok){showError('Не удалось загрузить модель.');return;}}
+  try{ await faceLandmarker.setOptions({runningMode:'IMAGE'}); }catch{}
+  const maxW=document.getElementById('photo-area').clientWidth;
+  const scale=Math.min(maxW/photoImage.width,1);
+  photoCanvas.width=photoImage.width*scale; photoCanvas.height=photoImage.height*scale;
+  try{
+    const res=faceLandmarker.detect(photoImage);
+    if(res.faceLandmarks&&res.faceLandmarks.length>0){
+      photoLandmarks=res.faceLandmarks[0]; redrawPhoto(); photoCanvas.classList.remove('hidden');
+    } else { showError('Лицо не обнаружено. Попробуй другое фото.'); document.getElementById('photo-placeholder').style.display='flex'; }
+  }catch(e){ showError('Ошибка: '+e.message); }
+  try{ await faceLandmarker.setOptions({runningMode:'VIDEO'}); }catch{}
+});
+
+function redrawPhoto(){
+  if(!photoImage||!photoLandmarks)return;
+  photoCtx.clearRect(0,0,photoCanvas.width,photoCanvas.height);
+  photoCtx.drawImage(photoImage,0,0,photoCanvas.width,photoCanvas.height);
+  drawLipColor2D(photoCtx,photoLandmarks,photoCanvas.width,photoCanvas.height);
+}
+
+// ── HSL Picker ──────────────────────────────────────────────
+const slCanvas=document.getElementById('sl-canvas'),slCtx=slCanvas.getContext('2d');
+const hueCanvas=document.getElementById('hue-canvas'),hueCtx=hueCanvas.getContext('2d');
+const pickerSwatch=document.getElementById('picker-swatch'),pickerHex=document.getElementById('picker-hex');
+let pH=0,pS=0.7,pL=0.4;
+
+function h2hex(h,s,l){const a=s*Math.min(l,1-l);const f=n=>{const k=(n+h/30)%12;return l-a*Math.max(-1,Math.min(k-3,9-k,1));};return'#'+[f(0),f(8),f(4)].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('');}
+function hex2h(hex){let r=parseInt(hex.slice(1,3),16)/255,g=parseInt(hex.slice(3,5),16)/255,b=parseInt(hex.slice(5,7),16)/255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h=0,s=0,l=(max+min)/2;if(max!==min){const d=max-min;s=l>.5?d/(2-max-min):d/(max+min);if(max===r)h=((g-b)/d+(g<b?6:0))/6;else if(max===g)h=((b-r)/d+2)/6;else h=((r-g)/d+4)/6;}return[h*360,s,l];}
+
+function drawSL(){const w=slCanvas.width,h=slCanvas.height;const gH=slCtx.createLinearGradient(0,0,w,0);gH.addColorStop(0,'white');gH.addColorStop(1,`hsl(${pH},100%,50%)`);slCtx.fillStyle=gH;slCtx.fillRect(0,0,w,h);const gV=slCtx.createLinearGradient(0,0,0,h);gV.addColorStop(0,'rgba(0,0,0,0)');gV.addColorStop(1,'black');slCtx.fillStyle=gV;slCtx.fillRect(0,0,w,h);const v=pL+pS*Math.min(pL,1-pL);const s2=v>0?2*(1-pL/v):0;const cx=s2*w,cy=(1-v)*h;slCtx.beginPath();slCtx.arc(cx,cy,7,0,Math.PI*2);slCtx.strokeStyle='#fff';slCtx.lineWidth=2.5;slCtx.stroke();slCtx.beginPath();slCtx.arc(cx,cy,5,0,Math.PI*2);slCtx.strokeStyle='rgba(0,0,0,.4)';slCtx.lineWidth=1;slCtx.stroke();}
+function drawHue(){const w=hueCanvas.width,h=hueCanvas.height;const g=hueCtx.createLinearGradient(0,0,w,0);for(let i=0;i<=360;i+=30)g.addColorStop(i/360,`hsl(${i},100%,50%)`);hueCtx.fillStyle=g;hueCtx.fillRect(0,0,w,h);const cx=(pH/360)*w;hueCtx.beginPath();hueCtx.arc(cx,h/2,h/2-1,0,Math.PI*2);hueCtx.fillStyle=`hsl(${pH},100%,50%)`;hueCtx.fill();hueCtx.strokeStyle='#fff';hueCtx.lineWidth=2;hueCtx.stroke();}
+function updatePicker(){const hex=h2hex(pH,pS,pL);state.color=hex;pickerSwatch.style.background=hex;pickerHex.textContent=hex.toUpperCase();document.querySelectorAll('.preset-dot').forEach(d=>d.classList.remove('active'));drawSL();drawHue();if(state.mode==='photo')redrawPhoto();}
+function resizePicker(){const w=slCanvas.parentElement.clientWidth-36;slCanvas.width=w;slCanvas.height=160;hueCanvas.width=w;hueCanvas.height=22;updatePicker();}
+
+let slD=false,hD=false;
+function slP(e){const r=slCanvas.getBoundingClientRect();const x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));const y=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));const v=1-y,s=x;pL=v*(1-s/2);pS=pL===0||pL===1?0:(v-pL)/Math.min(pL,1-pL);updatePicker();}
+function hP(e){const r=hueCanvas.getBoundingClientRect();pH=Math.max(0,Math.min(360,((e.clientX-r.left)/r.width)*360));updatePicker();}
+slCanvas.addEventListener('pointerdown',e=>{slD=true;slCanvas.setPointerCapture(e.pointerId);slP(e);});
+slCanvas.addEventListener('pointermove',e=>{if(slD)slP(e);});
+slCanvas.addEventListener('pointerup',()=>slD=false);
+hueCanvas.addEventListener('pointerdown',e=>{hD=true;hueCanvas.setPointerCapture(e.pointerId);hP(e);});
+hueCanvas.addEventListener('pointermove',e=>{if(hD)hP(e);});
+hueCanvas.addEventListener('pointerup',()=>hD=false);
+
+const presetsRow=document.getElementById('presets-row');
+PRESETS.forEach(hex=>{const dot=document.createElement('div');dot.className='preset-dot';dot.style.background=hex;dot.onclick=()=>{[pH,pS,pL]=hex2h(hex);document.querySelectorAll('.preset-dot').forEach(d=>d.classList.remove('active'));dot.classList.add('active');updatePicker();};presetsRow.appendChild(dot);});
+;[pH,pS,pL]=hex2h(state.color);
+requestAnimationFrame(resizePicker);
+window.addEventListener('resize',resizePicker);
+
+document.getElementById('opacity-slider').addEventListener('input',e=>{state.opacity=e.target.value/100;document.getElementById('opacity-val').textContent=e.target.value+'%';if(state.mode==='photo')redrawPhoto();});
+document.getElementById('gloss-slider').addEventListener('input',e=>{state.gloss=e.target.value/100;document.getElementById('gloss-val').textContent=e.target.value+'%';if(state.mode==='photo')redrawPhoto();});
+
+// ── Tab switching ──────────────────────────────────────────
+window.switchTab=function(mode){
+  state.mode=mode;
+  document.getElementById('tab-camera').classList.toggle('active',mode==='camera');
+  document.getElementById('tab-photo').classList.toggle('active',mode==='photo');
+  document.getElementById('section-camera').classList.toggle('hidden',mode!=='camera');
+  document.getElementById('section-photo').classList.toggle('hidden',mode!=='photo');
+  clearError();
+  if(mode==='camera'&&!video)startCamera();
+};
+function showError(msg){document.getElementById('error-banner').textContent=msg;document.getElementById('error-banner').classList.add('show');}
+function clearError(){document.getElementById('error-banner').classList.remove('show');}
+
+startCamera();
+</script>
 </body>
 </html>
