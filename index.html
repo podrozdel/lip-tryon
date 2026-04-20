@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Примерка цвета губ — Makeup Kitchen</title>
-  <!-- cache bust: v19 -->
+  <!-- cache bust: v20 -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -957,38 +957,51 @@ window.takeSelfie = async function takeSelfie() {
   const pad  = Math.round(out.width * 0.04);
   const size = Math.round(out.width * 0.05);
 
-  // Draw watermark.svg top-right (high-res rasterization for sharp logo)
-  await new Promise(async (resolve) => {
-    const logoSize = Math.round(out.width * 0.18); // ~18% ширины кадра
+  // Draw watermark as TRUE VECTOR via Path2D (sharp at any size)
+  try {
+    const logoSize = Math.round(out.width * 0.18);
     const logoX = out.width - logoSize - pad;
     const logoY = pad;
-    const hiResSize = logoSize * 3; // 3× для чёткости при масштабировании
-    try {
-      const res = await fetch('watermark.svg');
-      let svgText = await res.text();
-      // Подменяем width/height чтобы SVG растеризовался в большом разрешении
-      svgText = svgText.replace(/<svg([^>]*)>/i, (m, attrs) => {
-        const cleaned = attrs
-          .replace(/\swidth="[^"]*"/gi, '')
-          .replace(/\sheight="[^"]*"/gi, '');
-        return `<svg${cleaned} width="${hiResSize}" height="${hiResSize}">`;
-      });
-      const blob = new Blob([svgText], { type: 'image/svg+xml' });
-      const url  = URL.createObjectURL(blob);
-      const img  = new Image();
-      img.onload = () => {
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, logoX, logoY, logoSize, logoSize);
-        URL.revokeObjectURL(url);
-        resolve();
-      };
-      img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
-      img.src = url;
-    } catch {
-      resolve();
-    }
-  });
+    const res = await fetch('watermark.svg');
+    const svgText = await res.text();
+    const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+    const svg = doc.documentElement;
+    const vb  = (svg.getAttribute('viewBox') || '0 0 126 126').split(/\s+/).map(Number);
+    const vbW = vb[2], vbH = vb[3];
+    const scale = logoSize / vbW;
+
+    ctx.save();
+    ctx.translate(logoX, logoY);
+    ctx.scale(scale, scale);
+
+    // Draw each SVG element as vector path
+    svg.querySelectorAll('rect, path').forEach((el) => {
+      const fill    = el.getAttribute('fill') || '#000';
+      const opacity = parseFloat(el.getAttribute('opacity') || '1');
+      ctx.globalAlpha = opacity;
+      ctx.fillStyle = fill;
+
+      if (el.tagName.toLowerCase() === 'rect') {
+        const x = parseFloat(el.getAttribute('x') || '0');
+        const y = parseFloat(el.getAttribute('y') || '0');
+        const w = parseFloat(el.getAttribute('width'));
+        const h = parseFloat(el.getAttribute('height'));
+        const rx = parseFloat(el.getAttribute('rx') || '0');
+        const p = new Path2D();
+        if (rx > 0 && p.roundRect) p.roundRect(x, y, w, h, rx);
+        else p.rect(x, y, w, h);
+        ctx.fill(p);
+      } else {
+        const d = el.getAttribute('d');
+        if (d) ctx.fill(new Path2D(d));
+      }
+    });
+
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  } catch (e) {
+    // silent fallback — watermark just won't draw
+  }
 
   // Convert canvas to blob via atob (works in all browsers including Safari)
   function dataUrlToBlob(dataUrl) {
