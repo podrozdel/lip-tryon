@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Примерка цвета губ — Makeup Kitchen</title>
-  <!-- cache bust: v20 -->
+  <!-- cache bust: v21 -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -786,7 +786,7 @@ async function startCamera() {
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 854 } }
+      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 1707 } }
     });
     video.srcObject = stream;
     await new Promise(r => video.onloadedmetadata = r);
@@ -944,14 +944,17 @@ window.takeSelfie = async function takeSelfie() {
   const src = document.getElementById('camera-canvas');
   if (!src || !src.width) { btn.disabled = false; return; }
 
-  // Compose final image: canvas + MK watermark
+  // Compose final image at 2× для чёткости на Retina (вектор лого рендерится в native 2× resolution)
+  const SCALE = 2;
   const out = document.createElement('canvas');
-  out.width  = src.width;
-  out.height = src.height;
+  out.width  = src.width * SCALE;
+  out.height = src.height * SCALE;
   const ctx  = out.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
-  // Draw current camera frame with lip color
-  ctx.drawImage(src, 0, 0);
+  // Draw current camera frame scaled up
+  ctx.drawImage(src, 0, 0, out.width, out.height);
 
   // Watermark: top-right corner
   const pad  = Math.round(out.width * 0.04);
