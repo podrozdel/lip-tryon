@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Примерка цвета губ — Makeup Kitchen</title>
-  <!-- cache bust: v18 -->
+  <!-- cache bust: v19 -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -957,18 +957,37 @@ window.takeSelfie = async function takeSelfie() {
   const pad  = Math.round(out.width * 0.04);
   const size = Math.round(out.width * 0.05);
 
-  // Draw watermark.svg top-right (квадратный 126x126 viewBox)
-  await new Promise((resolve) => {
+  // Draw watermark.svg top-right (high-res rasterization for sharp logo)
+  await new Promise(async (resolve) => {
     const logoSize = Math.round(out.width * 0.18); // ~18% ширины кадра
     const logoX = out.width - logoSize - pad;
     const logoY = pad;
-    const img = new Image();
-    img.onload = () => {
-      ctx.drawImage(img, logoX, logoY, logoSize, logoSize);
+    const hiResSize = logoSize * 3; // 3× для чёткости при масштабировании
+    try {
+      const res = await fetch('watermark.svg');
+      let svgText = await res.text();
+      // Подменяем width/height чтобы SVG растеризовался в большом разрешении
+      svgText = svgText.replace(/<svg([^>]*)>/i, (m, attrs) => {
+        const cleaned = attrs
+          .replace(/\swidth="[^"]*"/gi, '')
+          .replace(/\sheight="[^"]*"/gi, '');
+        return `<svg${cleaned} width="${hiResSize}" height="${hiResSize}">`;
+      });
+      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+      const url  = URL.createObjectURL(blob);
+      const img  = new Image();
+      img.onload = () => {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, logoX, logoY, logoSize, logoSize);
+        URL.revokeObjectURL(url);
+        resolve();
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+      img.src = url;
+    } catch {
       resolve();
-    };
-    img.onerror = () => resolve();
-    img.src = 'watermark.svg';
+    }
   });
 
   // Convert canvas to blob via atob (works in all browsers including Safari)
